@@ -497,6 +497,7 @@ EMSCRIPTEN_BINDINGS(box2dcpp) {
             ));
         })
         .function("SpawnParticlesInCircle", &ParticleSystemSidecar::SpawnParticlesInCircle)
+        .function("DestroyParticlesInCircle", &ParticleSystemSidecar::DestroyParticlesInCircle)
         .function("Step", &ParticleSystemSidecar::Step)
         .function("StepWithWorld", &ParticleSystemSidecar::StepWithWorld)
         .function("Clear", &ParticleSystemSidecar::Clear)

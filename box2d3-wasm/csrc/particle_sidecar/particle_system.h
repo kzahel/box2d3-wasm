@@ -53,6 +53,7 @@ public:
 	const b2Vec2* GetPositionData() const;
 
 	int SpawnParticlesInCircle( b2Vec2 center, float radius, float spacing, b2Vec2 initialVelocity );
+	int DestroyParticlesInCircle( b2Vec2 center, float radius );
 	void Step( float timeStep );
 	void StepWithWorld( float timeStep, int subStepCount );
 	void Clear();

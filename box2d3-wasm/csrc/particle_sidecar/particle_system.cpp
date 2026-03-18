@@ -124,6 +124,51 @@ int ParticleSystemSidecar::SpawnParticlesInCircle( b2Vec2 center, float radius, 
 	return created;
 }
 
+int ParticleSystemSidecar::DestroyParticlesInCircle( b2Vec2 center, float radius )
+{
+	if ( !IsValid() || radius <= 0.0f || positions_.empty() )
+	{
+		return 0;
+	}
+
+	const float radiusSq = radius * radius;
+	std::size_t writeIndex = 0;
+	int removed = 0;
+
+	for ( std::size_t readIndex = 0; readIndex < positions_.size(); ++readIndex )
+	{
+		const b2Vec2 delta = b2Sub( positions_[readIndex], center );
+		if ( b2Dot( delta, delta ) <= radiusSq )
+		{
+			++removed;
+			continue;
+		}
+
+		if ( writeIndex != readIndex )
+		{
+			positions_[writeIndex] = positions_[readIndex];
+			velocities_[writeIndex] = velocities_[readIndex];
+		}
+		++writeIndex;
+	}
+
+	if ( removed == 0 )
+	{
+		return 0;
+	}
+
+	positions_.resize( writeIndex );
+	velocities_.resize( writeIndex );
+	previousPositions_.clear();
+	densityScratch_.clear();
+	nearDensityScratch_.clear();
+	proxies_.clear();
+	cellRanges_.clear();
+	contacts_.clear();
+
+	return removed;
+}
+
 void ParticleSystemSidecar::Step( float timeStep )
 {
 	if ( !IsValid() || timeStep <= 0.0f )
