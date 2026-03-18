@@ -50,6 +50,8 @@ public:
 
 	int GetParticleCount() const;
 	float GetParticleRadius() const;
+	int GetMaxParticles() const;
+	void SetMaxParticles( int maxParticles );
 	const b2Vec2* GetPositionData() const;
 
 	int SpawnParticlesInCircle( b2Vec2 center, float radius, float spacing, b2Vec2 initialVelocity );

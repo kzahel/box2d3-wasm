@@ -483,6 +483,8 @@ EMSCRIPTEN_BINDINGS(box2dcpp) {
         .function("IsValid", &ParticleSystemSidecar::IsValid)
         .function("GetParticleCount", &ParticleSystemSidecar::GetParticleCount)
         .function("GetParticleRadius", &ParticleSystemSidecar::GetParticleRadius)
+        .function("GetMaxParticles", &ParticleSystemSidecar::GetMaxParticles)
+        .function("SetMaxParticles", &ParticleSystemSidecar::SetMaxParticles)
         .function("GetPositionBuffer", +[](ParticleSystemSidecar& self) -> emscripten::val {
             const int particleCount = self.GetParticleCount();
             if (particleCount == 0) {

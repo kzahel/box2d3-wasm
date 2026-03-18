@@ -79,6 +79,16 @@ float ParticleSystemSidecar::GetParticleRadius() const
 	return particleRadius_;
 }
 
+int ParticleSystemSidecar::GetMaxParticles() const
+{
+	return maxParticles_;
+}
+
+void ParticleSystemSidecar::SetMaxParticles( int maxParticles )
+{
+	maxParticles_ = maxParticles > 0 ? maxParticles : 0;
+}
+
 const b2Vec2* ParticleSystemSidecar::GetPositionData() const
 {
 	return positions_.data();
