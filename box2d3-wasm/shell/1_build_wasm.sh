@@ -138,6 +138,8 @@ emcc -lembind \
 "$CSRC_DIR/glue.cpp" \
 "$CSRC_DIR/threading.cpp" \
 "$CSRC_DIR/debugDraw.cpp" \
+"$CSRC_DIR/particle_sidecar/particle_bridge.cpp" \
+"$CSRC_DIR/particle_sidecar/particle_system.cpp" \
 "$ENKITS_DIR/src/TaskScheduler.cpp" \
 "$CMAKEBUILD_DIR/src/$LIBARCHIVE" \
 -I "$BOX2D_DIR/include" \

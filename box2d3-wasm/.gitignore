@@ -6,3 +6,4 @@
 !/build/dist/es/entry.mjs
 !/build/dist/es/entry.d.ts
 /node_modules/
+/csrc/particle/

@@ -5,8 +5,11 @@
 #include <emscripten/bind.h>
 #include <malloc.h>
 
+#include "particle_sidecar/particle_system.h"
+
 using namespace emscripten;
 using namespace b2;
+using namespace physbox3::particle_sidecar;
 
 template<typename T>
 struct GetInterfaceType;
@@ -465,6 +468,41 @@ EMSCRIPTEN_BINDINGS(box2dcpp) {
         }, allow_raw_pointers())
         .function("Draw", &b2::World::Draw)
         ;
+
+    class_<ParticleSystemDef>("ParticleSystemDef")
+        .constructor<>()
+        .property("radius", &ParticleSystemDef::radius)
+        .property("density", &ParticleSystemDef::density)
+        .property("gravityScale", &ParticleSystemDef::gravityScale)
+        .property("initialCapacity", &ParticleSystemDef::initialCapacity)
+        .property("maxParticles", &ParticleSystemDef::maxParticles)
+        ;
+
+    class_<ParticleSystemSidecar>("ParticleSystem")
+        .function("Destroy", &ParticleSystemSidecar::Destroy)
+        .function("IsValid", &ParticleSystemSidecar::IsValid)
+        .function("GetParticleCount", &ParticleSystemSidecar::GetParticleCount)
+        .function("GetParticleRadius", &ParticleSystemSidecar::GetParticleRadius)
+        .function("GetPositionBuffer", +[](ParticleSystemSidecar& self) -> emscripten::val {
+            const int particleCount = self.GetParticleCount();
+            if (particleCount == 0) {
+                return emscripten::val::global("Float32Array").new_(0);
+            }
+
+            // This is a zero-copy view into WASM memory. JS must reacquire it
+            // after particle growth because std::vector reallocation can move it.
+            return emscripten::val(typed_memory_view(
+                particleCount * 2,
+                reinterpret_cast<const float*>(self.GetPositionData())
+            ));
+        })
+        .function("SpawnParticlesInCircle", &ParticleSystemSidecar::SpawnParticlesInCircle)
+        .function("Step", &ParticleSystemSidecar::Step)
+        .function("Clear", &ParticleSystemSidecar::Clear)
+        ;
+
+    function("createParticleSystem", &CreateParticleSystem, allow_raw_pointers());
+    function("destroyParticleSystem", &DestroyParticleSystem, allow_raw_pointers());
 
     // ------------------------------------------------------------------------
     // b2Shape
