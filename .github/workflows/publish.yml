@@ -49,6 +49,9 @@ jobs:
           node-version: 20
           registry-url: 'https://registry.npmjs.org'
 
+      - name: update npm for OIDC support
+        run: npm install -g npm@latest
+
       - name: install global deps
         run: npm i -g typescript yarn
 
