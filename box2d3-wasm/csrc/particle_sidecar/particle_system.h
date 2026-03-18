@@ -54,6 +54,7 @@ public:
 
 	int SpawnParticlesInCircle( b2Vec2 center, float radius, float spacing, b2Vec2 initialVelocity );
 	void Step( float timeStep );
+	void StepWithWorld( float timeStep, int subStepCount );
 	void Clear();
 
 private:

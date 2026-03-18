@@ -152,6 +152,23 @@ void ParticleSystemSidecar::Step( float timeStep )
 	}
 }
 
+void ParticleSystemSidecar::StepWithWorld( float timeStep, int subStepCount )
+{
+	if ( !IsValid() || timeStep <= 0.0f )
+	{
+		return;
+	}
+
+	const int clampedSubStepCount = subStepCount > 0 ? subStepCount : 1;
+	const float subTimeStep = timeStep / static_cast<float>( clampedSubStepCount );
+
+	for ( int i = 0; i < clampedSubStepCount; ++i )
+	{
+		Step( subTimeStep );
+		bridge_.StepWorld( subTimeStep, 1 );
+	}
+}
+
 void ParticleSystemSidecar::Clear()
 {
 	positions_.clear();

@@ -23,6 +23,7 @@ public:
 	virtual ~ParticleWorldBridge() = default;
 
 	virtual b2Vec2 GetGravity() const = 0;
+	virtual void StepWorld( float timeStep, int subStepCount ) const = 0;
 	virtual void QueryShapesInAABB( const b2AABB& aabb, ParticleShapeQueryCallback callback, void* context ) const = 0;
 	virtual bool ComputeParticleShapeContact( b2ShapeId shapeId, b2Vec2 particlePosition, float particleRadius,
 											  ParticleShapeContact* outContact ) const = 0;
@@ -38,6 +39,7 @@ public:
 	b2WorldId GetWorldId() const;
 
 	b2Vec2 GetGravity() const override;
+	void StepWorld( float timeStep, int subStepCount ) const override;
 	void QueryShapesInAABB( const b2AABB& aabb, ParticleShapeQueryCallback callback, void* context ) const override;
 	bool ComputeParticleShapeContact( b2ShapeId shapeId, b2Vec2 particlePosition, float particleRadius,
 									  ParticleShapeContact* outContact ) const override;

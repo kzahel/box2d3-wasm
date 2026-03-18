@@ -187,6 +187,11 @@ b2Vec2 Box2DParticleWorldBridge::GetGravity() const
 	return b2World_GetGravity( world_id_ );
 }
 
+void Box2DParticleWorldBridge::StepWorld( float timeStep, int subStepCount ) const
+{
+	b2World_Step( world_id_, timeStep, subStepCount );
+}
+
 void Box2DParticleWorldBridge::QueryShapesInAABB( const b2AABB& aabb, ParticleShapeQueryCallback callback, void* context ) const
 {
 	QueryForwarder forwarder = {
