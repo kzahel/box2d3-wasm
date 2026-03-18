@@ -1,0 +1,161 @@
+name: Publish to npm
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  EM_VERSION: 4.0.18
+  EM_CACHE_FOLDER: 'emsdk-cache'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: write
+      id-token: write   # npm trusted publishing (OIDC provenance)
+      actions: write
+    steps:
+      - name: extract version from tag
+        id: version
+        run: |
+          TAG="${GITHUB_REF#refs/tags/v}"
+          if [[ ! "$TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+ ]]; then
+            echo "::error::Tag must be semver: v1.2.3"
+            exit 1
+          fi
+          echo "version=$TAG" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: setup emscripten cache
+        id: cache-system-libraries
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.EM_CACHE_FOLDER }}
+          key: ${{ env.EM_VERSION }}-${{ runner.os }}
+
+      - uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: ${{ env.EM_VERSION }}
+          actions-cache-folder: ${{ env.EM_CACHE_FOLDER }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: install global deps
+        run: npm i -g typescript yarn
+
+      - name: install local deps
+        run: npm ci
+        working-directory: box2d3-wasm
+
+      # Build deluxe flavor
+      - name: 'deluxe: build makefile'
+        working-directory: box2d3-wasm
+        run: shell/0_build_makefile.sh
+        env:
+          FLAVOUR: deluxe
+          TARGET_TYPE: Release
+
+      - name: 'deluxe: emmake'
+        working-directory: box2d3-wasm
+        run: emmake make -j8 -C cmake-build-deluxe
+
+      - name: 'deluxe: build wasm'
+        working-directory: box2d3-wasm
+        run: shell/1_build_wasm.sh
+        env:
+          FLAVOUR: deluxe
+          TARGET_TYPE: Release
+
+      # Build compat flavor
+      - name: 'compat: build makefile'
+        working-directory: box2d3-wasm
+        run: shell/0_build_makefile.sh
+        env:
+          FLAVOUR: compat
+          TARGET_TYPE: Release
+
+      - name: 'compat: emmake'
+        working-directory: box2d3-wasm
+        run: emmake make -j8 -C cmake-build-compat
+
+      - name: 'compat: build wasm'
+        working-directory: box2d3-wasm
+        run: shell/1_build_wasm.sh
+        env:
+          FLAVOUR: compat
+          TARGET_TYPE: Release
+
+      - name: copy demo utils to build output
+        run: |
+          mkdir -p box2d3-wasm/build/dist/es/utils
+          cp demo/utils/*.mjs box2d3-wasm/build/dist/es/utils/
+          cp demo/utils/*.d.ts box2d3-wasm/build/dist/es/utils/
+          echo "Copied demo utils to build/dist/es/utils:"
+          ls -la box2d3-wasm/build/dist/es/utils/
+
+      # Smoke test: verify particle APIs exist in built artifacts
+      - name: 'smoke test: particle APIs present'
+        working-directory: box2d3-wasm
+        run: |
+          echo "Checking particle APIs in deluxe .d.ts..."
+          DELUXE_DTS="build/dist/es/deluxe/Box2D.deluxe.d.ts"
+          for symbol in ParticleSystem ParticleSystemDef createParticleSystem \
+                        GetParticleCount SpawnParticlesInCircle DestroyParticlesInCircle \
+                        destroyParticleSystem; do
+            if ! grep -q "$symbol" "$DELUXE_DTS"; then
+              echo "::error::Missing particle API symbol: $symbol in $DELUXE_DTS"
+              exit 1
+            fi
+            echo "  ✓ $symbol"
+          done
+
+          echo "Checking particle APIs in compat .d.ts..."
+          COMPAT_DTS="build/dist/es/compat/Box2D.compat.d.ts"
+          for symbol in ParticleSystem ParticleSystemDef createParticleSystem \
+                        GetParticleCount SpawnParticlesInCircle DestroyParticlesInCircle \
+                        destroyParticleSystem; do
+            if ! grep -q "$symbol" "$COMPAT_DTS"; then
+              echo "::error::Missing particle API symbol: $symbol in $COMPAT_DTS"
+              exit 1
+            fi
+            echo "  ✓ $symbol"
+          done
+
+          echo "Checking WASM binaries exist and are non-trivial..."
+          for wasm in build/dist/es/deluxe/Box2D.deluxe.wasm \
+                      build/dist/es/compat/Box2D.compat.wasm; do
+            SIZE=$(stat -c%s "$wasm" 2>/dev/null || stat -f%z "$wasm")
+            if [ "$SIZE" -lt 100000 ]; then
+              echo "::error::WASM binary $wasm too small (${SIZE} bytes), build may have failed"
+              exit 1
+            fi
+            echo "  ✓ $wasm (${SIZE} bytes)"
+          done
+          echo "All smoke tests passed."
+
+      # Set version and publish
+      - name: set package version
+        working-directory: box2d3-wasm
+        run: npm version "${{ steps.version.outputs.version }}" --no-git-tag-version
+
+      - name: publish to npm
+        working-directory: box2d3-wasm
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: v${{ steps.version.outputs.version }}
+          generate_release_notes: true
