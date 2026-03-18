@@ -150,8 +150,6 @@ jobs:
       - name: publish to npm
         working-directory: box2d3-wasm
         run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: create GitHub release
         uses: softprops/action-gh-release@v2
